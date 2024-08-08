@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Extract HREF Values</title>
+<style>
+    /* Basic styling for the demo */
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+    textarea {
+        width: 100%;
+        height: 200px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+    button {
+        margin-top: 10px;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+    }
+    button + button {
+        margin-left: 10px;
+    }
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+</style>
+</head>
+<body>
+    <h2>Extract HREF Values</h2>
+    <textarea id="htmlInput" placeholder="Paste or type your HTML content here..."></textarea>
+    <button onclick="initialize()">Set Archive Name and Open URL</button>
+    <button onclick="extractHref()">Extract HREF Values</button>
+    <button onclick="copyToClipboard()">Copy to Clipboard</button>
+    <h3>Extracted HREF Values</h3>
+    <pre id="hrefValues"></pre>
+
+    <script>
+        var archiveUrl = '';
+
+        function initialize() {
+            var suffix = prompt('Enter the suffix of the archive.org entry (e.g., A, B, C):');
+            if (!suffix) {
+                alert('Suffix is required.');
+                return;
+            }
+            
+            // Automatically convert to uppercase
+            suffix = suffix.toUpperCase();
+            
+            var archiveName = `ravana-${suffix}`;
+            archiveUrl = `https://archive.org/download/${archiveName}`;
+
+            // Open the archive URL in a new tab
+            window.open(archiveUrl, '_blank');
+        }
+
+        function extractHref() {
+            if (!archiveUrl) {
+                alert('Please set the archive URL first.');
+                return;
+            }
+
+            var htmlText = document.getElementById('htmlInput').value;
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(htmlText, 'text/html');
+            var links = doc.querySelectorAll('a[href]');
+            var excludedExtensions = ['.png', '.torrent', '.xml', '.sqlite', '.jpg'];
+            
+            var hrefValues = Array.from(links)
+                .map(link => link.getAttribute('href'))
+                .filter(href => {
+                    return !excludedExtensions.some(ext => href.endsWith(ext)) &&
+                           !href.startsWith('#') &&
+                           !href.startsWith('/') &&
+                           !href.includes('://') &&
+                           href.includes('.'); // Exclude URLs without extensions
+                })
+                .map(href => `${archiveUrl}/${href}`)
+                .join('\n');
+                
+            document.getElementById('hrefValues').textContent = hrefValues;
+        }
+
+        function copyToClipboard() {
+            var text = document.getElementById('hrefValues').textContent;
+            if (text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Copied to clipboard!');
+                }).catch(err => {
+                    alert('Failed to copy: ' + err);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
